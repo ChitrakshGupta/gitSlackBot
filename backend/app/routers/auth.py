@@ -64,7 +64,7 @@ async def github_login():
     params = {
         "client_id": settings.GITHUB_CLIENT_ID,
         "redirect_uri": f"{settings.BACKEND_URL}/auth/callback",
-        "scope": "repo",  # read/write access to repos (needed for labels + comments)
+        "scope": "repo admin:repo_hook",  # repo: labels/comments; admin:repo_hook: create/list webhooks
         "state": state,
     }
     url = f"{GITHUB_AUTHORIZE_URL}?{urlencode(params)}"

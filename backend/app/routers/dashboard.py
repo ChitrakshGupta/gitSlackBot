@@ -262,6 +262,26 @@ async def connect_repo(
     if wh_resp.status_code in (200, 201):
         webhook_id = wh_resp.json().get("id")
         logger.info(f"Created webhook {webhook_id} on {repo_full_name}")
+    elif wh_resp.status_code == 422:
+        # Webhook already exists — find it and reuse its ID
+        logger.info(f"Webhook already exists on {repo_full_name} — looking up existing hook...")
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            list_resp = await client.get(
+                f"https://api.github.com/repos/{repo_full_name}/hooks",
+                headers={
+                    "Authorization": f"Bearer {user.access_token}",
+                    "Accept": "application/vnd.github+json",
+                },
+            )
+        if list_resp.status_code == 200:
+            for hook in list_resp.json():
+                if hook.get("config", {}).get("url") == webhook_url:
+                    webhook_id = hook.get("id")
+                    logger.info(f"Reusing existing webhook {webhook_id} on {repo_full_name}")
+                    break
+        if not webhook_id:
+            webhook_error = wh_resp.json().get("message", wh_resp.text)
+            logger.warning(f"Failed to create webhook on {repo_full_name}: {wh_resp.status_code} — {webhook_error}")
     else:
         webhook_error = wh_resp.json().get("message", wh_resp.text)
         logger.warning(
