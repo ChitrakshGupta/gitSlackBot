@@ -1,0 +1,42 @@
+# ── Python ───────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# ── Node / Frontend ─────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ── Environment / Secrets ────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── IDE / OS ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Logs ─────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── Personal / scratch files ─────────────────────────────────
+AI_NOTES.MD
+test.md
+*.png
+response*.png
+Event-Driven*.md
+IMPLEMENTATION_PLAN.md

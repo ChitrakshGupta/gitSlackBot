@@ -1,0 +1,24 @@
+# Web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Database (async Postgres via SQLAlchemy)
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.1
+
+# Authentication
+pyjwt==2.10.1
+httpx==0.28.1
+
+# Environment variables
+python-dotenv==1.0.1
+
+# Security
+cryptography==44.0.0
+
+# Tunnel — auto-exposes local backend to the internet in dev mode
+pyngrok
+
+# CORS
+# (included in fastapi/starlette)
