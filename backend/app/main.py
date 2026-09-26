@@ -37,21 +37,21 @@ def _start_ngrok_background(port: int) -> None:
             if auth_token:
                 conf.get_default().auth_token = auth_token
 
-            # Kill any stale tunnels from previous sessions before starting
-            try:
-                ngrok.kill()
-            except Exception:
-                pass
+            # Check if there is already an active tunnel
+            existing_tunnels = ngrok.get_tunnels()
+            if existing_tunnels:
+                public_url = existing_tunnels[0].public_url.replace("http://", "https://")
+            else:
+                tunnel = ngrok.connect(f"127.0.0.1:{port}", "http")
+                public_url = tunnel.public_url.replace("http://", "https://")
 
-            tunnel = ngrok.connect(port, "http")
-            public_url = tunnel.public_url.replace("http://", "https://")
             public_webhook_url = public_url
             print(f"🌐 ngrok tunnel active: {public_url}")
             print(f"   Webhook URL: {public_url}/webhook/github")
         except ImportError:
             print("⚠️  pyngrok not installed — skipping auto-tunnel")
         except Exception as e:
-            print(f"⚠️  ngrok failed: {e}")
+            print(f"⚠️  ngrok connection failed: {e}")
 
     t = threading.Thread(target=_tunnel, daemon=True)
     t.start()

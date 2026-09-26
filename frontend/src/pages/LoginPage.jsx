@@ -1,12 +1,38 @@
 /**
- * Login page — professional redesign.
- * Card layout with feature highlights, decorative grid, bot branding.
+ * Login page — professional dark theme, no decorative emoji.
  */
 
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+
+// Simple SVG icons used inline — no emoji
+function GitBotLogo() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      <circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+function WarningIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  )
+}
+
+const FEATURES = [
+  { label: 'Auto-label Issues' },
+  { label: 'PR Comments' },
+  { label: 'Slack Alerts' },
+]
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -29,15 +55,15 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#0d1117] flex items-center justify-center relative overflow-hidden">
 
-      {/* Decorative dot grid — top right */}
-      <div className="absolute top-12 right-12 grid grid-cols-6 gap-3 opacity-20 pointer-events-none select-none">
+      {/* Subtle dot grid — top right */}
+      <div className="absolute top-12 right-12 grid grid-cols-6 gap-3 opacity-[0.08] pointer-events-none select-none">
         {Array.from({ length: 36 }).map((_, i) => (
           <div key={i} className="w-1 h-1 rounded-full bg-gray-400" />
         ))}
       </div>
 
-      {/* Decorative dot grid — bottom left */}
-      <div className="absolute bottom-12 left-12 grid grid-cols-6 gap-3 opacity-20 pointer-events-none select-none">
+      {/* Subtle dot grid — bottom left */}
+      <div className="absolute bottom-12 left-12 grid grid-cols-6 gap-3 opacity-[0.08] pointer-events-none select-none">
         {Array.from({ length: 36 }).map((_, i) => (
           <div key={i} className="w-1 h-1 rounded-full bg-gray-400" />
         ))}
@@ -49,8 +75,8 @@ export default function LoginPage() {
 
           {/* Logo */}
           <div className="flex items-center justify-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-xl">
-              🤖
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
+              <GitBotLogo />
             </div>
             <span className="text-white text-2xl font-bold tracking-tight">GitBot</span>
           </div>
@@ -68,8 +94,9 @@ export default function LoginPage() {
 
           {/* Error banner */}
           {error && (
-            <div className="bg-red-900/40 text-red-300 border border-red-800/60 rounded-lg px-4 py-3 text-sm text-left">
-              ⚠ Login failed: {error}
+            <div className="flex items-start gap-2.5 bg-red-900/30 text-red-300 border border-red-800/60 rounded-lg px-4 py-3 text-sm text-left">
+              <WarningIcon />
+              <span>Login failed: {error}</span>
             </div>
           )}
 
@@ -91,16 +118,12 @@ export default function LoginPage() {
 
           {/* Feature pills */}
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            {[
-              { icon: '🐛', label: 'Auto-label Issues' },
-              { icon: '🔀', label: 'PR Comments' },
-              { icon: '🚀', label: 'Slack Alerts' },
-            ].map(({ icon, label }) => (
+            {FEATURES.map(({ label }) => (
               <span
                 key={label}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#21262d] border border-[#30363d] rounded-full text-xs text-gray-400"
+                className="inline-flex items-center px-3 py-1.5 bg-[#21262d] border border-[#30363d] rounded-full text-xs text-gray-400"
               >
-                {icon} {label}
+                {label}
               </span>
             ))}
           </div>

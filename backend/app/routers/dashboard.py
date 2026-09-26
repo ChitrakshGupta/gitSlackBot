@@ -4,6 +4,7 @@ All routes require a valid JWT (get_current_user dependency).
 """
 
 import logging
+import uuid
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -133,6 +134,7 @@ async def list_events(
                 "event_type": e.event_type,
                 "action_taken": e.action_taken,
                 "status": e.status,
+                "ai_analysis": e.ai_analysis,  # None when AI was disabled or failed
                 "created_at": e.created_at.isoformat() if e.created_at else None,
                 "github_delivery_id": e.github_delivery_id,
             }
@@ -322,4 +324,76 @@ async def connect_repo(
         # Provide only the first 8 chars as a hint so user can verify which secret to use.
         "webhook_secret_hint": settings.GITHUB_WEBHOOK_SECRET[:8] + "..." if not webhook_id else None,
         "message": message,
+    }
+
+
+# ─────────────────────────────────────────────────────────────
+# DELETE /repos/{repo_id} — disconnect a repo & clean up webhook
+# ─────────────────────────────────────────────────────────────
+
+@router.delete("/repos/{repo_id}")
+async def delete_repo(
+    repo_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Disconnect a GitHub repo for the logged-in user.
+    1. Verify repo exists and belongs to the user.
+    2. Attempt to delete the webhook from GitHub (if webhook_id exists).
+    3. Delete repo record from database (cascades to events).
+    """
+    try:
+        repo_uuid = uuid.UUID(repo_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid repo ID format",
+        )
+
+    result = await db.execute(
+        select(Repo).where(Repo.id == repo_uuid, Repo.user_id == user.id)
+    )
+    repo = result.scalar_one_or_none()
+
+    if repo is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Repository not found or does not belong to you",
+        )
+
+    repo_full_name = repo.repo_full_name
+    webhook_id = repo.webhook_id
+
+    # Best-effort attempt to delete webhook on GitHub
+    if webhook_id and user.access_token:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                del_resp = await client.delete(
+                    f"https://api.github.com/repos/{repo_full_name}/hooks/{webhook_id}",
+                    headers={
+                        "Authorization": f"Bearer {user.access_token}",
+                        "Accept": "application/vnd.github+json",
+                    },
+                )
+                if del_resp.status_code in (204, 404):
+                    logger.info("Deleted GitHub webhook %s for %s", webhook_id, repo_full_name)
+                else:
+                    logger.warning(
+                        "Failed to delete GitHub webhook %s for %s: %s",
+                        webhook_id,
+                        repo_full_name,
+                        del_resp.status_code,
+                    )
+        except Exception as e:
+            logger.warning("Error deleting GitHub webhook %s: %s", webhook_id, e)
+
+    # Delete repo from database
+    await db.delete(repo)
+    logger.info("Deleted repo %s (id: %s) for user %s", repo_full_name, repo_id, user.username)
+
+    return {
+        "message": f"Repository {repo_full_name} disconnected successfully",
+        "id": repo_id,
+        "repo_full_name": repo_full_name,
     }

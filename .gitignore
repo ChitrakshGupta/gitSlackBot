@@ -34,9 +34,7 @@ Thumbs.db
 npm-debug.log*
 
 # ── Personal / scratch files ─────────────────────────────────
-AI_NOTES.MD
 test.md
 *.png
 response*.png
 Event-Driven*.md
-IMPLEMENTATION_PLAN.md

@@ -17,6 +17,10 @@ python-dotenv==1.0.1
 # Security
 cryptography==44.0.0
 
+# AI — Gemini (free tier, no credit card required)
+google-genai>=1.0.0
+pydantic>=2.0.0
+
 # Tunnel — auto-exposes local backend to the internet in dev mode
 pyngrok
 

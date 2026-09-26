@@ -1,17 +1,47 @@
 /**
  * Onboarding wizard — shown to new users after first login.
  * Steps:
- *   1. Welcome (GitHub already connected via OAuth)
- *   2. Connect a GitHub repo
- *   3. Connect Slack
- *   4. All set → go to dashboard
+ *   0. Welcome (GitHub already connected via OAuth)
+ *   1. Connect a GitHub repo
+ *   2. Connect Slack
+ *   3. All set → go to dashboard
  *
- * Returning users (already have repos) are auto-redirected to /dashboard.
+ * Bug fix: moved the second useEffect above the conditional return
+ * so all hooks are called unconditionally (Rules of Hooks).
  */
 
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../api'
+
+// ── SVG icons ─────────────────────────────────────────────────
+
+function CheckIcon({ className = 'w-4 h-4' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  )
+}
+
+function GitBotLogo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      <circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+function SearchIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  )
+}
 
 // ── Step indicator ────────────────────────────────────────────
 
@@ -24,10 +54,10 @@ function StepIndicator({ current, total }) {
             i < current
               ? 'bg-green-500 text-white'
               : i === current
-              ? 'bg-blue-500 text-white ring-4 ring-blue-500/20'
+              ? 'bg-blue-600 text-white ring-4 ring-blue-500/20'
               : 'bg-[#21262d] text-gray-500 border border-[#30363d]'
           }`}>
-            {i < current ? '✓' : i + 1}
+            {i < current ? <CheckIcon className="w-3.5 h-3.5" /> : i + 1}
           </div>
           {i < total - 1 && (
             <div className={`w-10 h-0.5 rounded-full transition-all ${i < current ? 'bg-green-500' : 'bg-[#30363d]'}`} />
@@ -38,7 +68,7 @@ function StepIndicator({ current, total }) {
   )
 }
 
-// ── Repo Picker (modal-style list) ────────────────────────────
+// ── Repo Picker ────────────────────────────────────────────────
 
 function RepoList({ onSelect, alreadyConnected }) {
   const [search, setSearch] = useState('')
@@ -62,7 +92,9 @@ function RepoList({ onSelect, alreadyConnected }) {
   return (
     <div className="space-y-3">
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">🔍</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+          <SearchIcon />
+        </span>
         <input
           ref={inputRef}
           type="text"
@@ -106,8 +138,8 @@ function RepoList({ onSelect, alreadyConnected }) {
                 <div className="flex items-center gap-2 ml-4 flex-shrink-0 text-xs">
                   {repo.language && <span className="text-gray-500">{repo.language}</span>}
                   {connected
-                    ? <span className="text-green-400 font-medium">✓ Connected</span>
-                    : <span className="text-blue-400">Select →</span>
+                    ? <span className="text-green-400 font-medium flex items-center gap-1"><CheckIcon className="w-3 h-3" /> Connected</span>
+                    : <span className="text-blue-400">Select</span>
                   }
                 </div>
               </button>
@@ -119,16 +151,22 @@ function RepoList({ onSelect, alreadyConnected }) {
   )
 }
 
-// ── Main Onboarding ───────────────────────────────────────────
+// ── Feature cards data (no emoji) ─────────────────────────────
 
-const STEPS = ['welcome', 'repo', 'slack', 'done']
+const FEATURE_CARDS = [
+  { title: 'Auto-label', desc: 'Issues get tagged automatically' },
+  { title: 'PR Comments', desc: 'Welcome message on every PR' },
+  { title: 'Slack Alerts', desc: 'Real-time push notifications' },
+]
+
+// ── Main Onboarding ───────────────────────────────────────────
 
 export default function OnboardingPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const token = localStorage.getItem('token')
 
-  const [step, setStep] = useState(0)         // 0=welcome, 1=repo, 2=slack, 3=done
+  const [step, setStep] = useState(0)
   const [username, setUsername] = useState('')
   const [repos, setRepos] = useState([])
   const [slackConfigured, setSlackConfigured] = useState(false)
@@ -140,10 +178,17 @@ export default function OnboardingPage() {
   const [webhookCreated, setWebhookCreated] = useState(false)
   const [checking, setChecking] = useState(true)
 
-  if (!token) { navigate('/', { replace: true }); return null }
+  // Auth guard — must be before any conditional return
+  useEffect(() => {
+    if (!token) {
+      navigate('/', { replace: true })
+    }
+  }, [token, navigate])
 
   // On mount: fetch state, decide if onboarding is needed
+  // Must be before any conditional return (Rules of Hooks)
   useEffect(() => {
+    if (!token) return
     async function check() {
       try {
         const [reposRes, settingsRes] = await Promise.all([
@@ -193,7 +238,9 @@ export default function OnboardingPage() {
       }
     }
     check()
-  }, [navigate, searchParams])
+  }, [navigate, searchParams, token])
+
+  if (!token) return null
 
   const handleRepoConnect = async (repoFullName) => {
     setSubmitting(true)
@@ -252,7 +299,6 @@ export default function OnboardingPage() {
     }
   }
 
-  // Loading check
   if (checking) {
     return (
       <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
@@ -267,10 +313,10 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-4">
       {/* Decorative dots */}
-      <div className="fixed top-10 right-10 grid grid-cols-5 gap-3 opacity-10 pointer-events-none">
+      <div className="fixed top-10 right-10 grid grid-cols-5 gap-3 opacity-[0.07] pointer-events-none">
         {Array.from({ length: 25 }).map((_, i) => <div key={i} className="w-1 h-1 rounded-full bg-gray-400" />)}
       </div>
-      <div className="fixed bottom-10 left-10 grid grid-cols-5 gap-3 opacity-10 pointer-events-none">
+      <div className="fixed bottom-10 left-10 grid grid-cols-5 gap-3 opacity-[0.07] pointer-events-none">
         {Array.from({ length: 25 }).map((_, i) => <div key={i} className="w-1 h-1 rounded-full bg-gray-400" />)}
       </div>
 
@@ -278,7 +324,9 @@ export default function OnboardingPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2.5 mb-6">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-lg">🤖</div>
+            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
+              <GitBotLogo />
+            </div>
             <span className="text-white text-xl font-bold tracking-tight">GitBot</span>
           </div>
           <StepIndicator current={step} total={4} />
@@ -290,8 +338,8 @@ export default function OnboardingPage() {
           {/* ── STEP 0: Welcome ── */}
           {step === 0 && (
             <div className="p-8 text-center space-y-6">
-              <div className="w-16 h-16 bg-green-900/30 border border-green-700/40 rounded-2xl flex items-center justify-center text-3xl mx-auto">
-                ✅
+              <div className="w-16 h-16 bg-green-900/30 border border-green-700/40 rounded-2xl flex items-center justify-center mx-auto">
+                <CheckIcon className="w-8 h-8 text-green-400" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">Welcome, @{username}!</h2>
@@ -300,15 +348,10 @@ export default function OnboardingPage() {
                 </p>
               </div>
 
-              {/* What GitBot does */}
+              {/* Feature cards */}
               <div className="grid grid-cols-3 gap-3 text-left">
-                {[
-                  { icon: '🐛', title: 'Auto-label', desc: 'Issues get tagged automatically' },
-                  { icon: '🔀', title: 'PR Comments', desc: 'Welcome message on every PR' },
-                  { icon: '🚀', title: 'Slack Alerts', desc: 'Real-time push notifications' },
-                ].map(({ icon, title, desc }) => (
+                {FEATURE_CARDS.map(({ title, desc }) => (
                   <div key={title} className="bg-[#0d1117] border border-[#30363d] rounded-xl p-3 text-center">
-                    <div className="text-2xl mb-1">{icon}</div>
                     <p className="text-xs font-semibold text-white">{title}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
                   </div>
@@ -319,7 +362,7 @@ export default function OnboardingPage() {
                 onClick={() => setStep(1)}
                 className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition cursor-pointer"
               >
-                Get started →
+                Get started
               </button>
             </div>
           )}
@@ -329,7 +372,7 @@ export default function OnboardingPage() {
             <div className="p-8 space-y-6">
               <div>
                 <div className="flex items-center gap-3 mb-1">
-                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-sm font-bold">1</div>
+                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-sm font-bold text-white">1</div>
                   <h2 className="text-lg font-bold text-white">Connect a repository</h2>
                 </div>
                 <p className="text-gray-400 text-sm ml-11">
@@ -353,8 +396,8 @@ export default function OnboardingPage() {
               )}
 
               <div className="flex justify-between pt-2">
-                <button onClick={() => setStep(0)} className="text-sm text-gray-500 hover:text-white transition cursor-pointer">← Back</button>
-                <button onClick={() => setStep(2)} className="text-sm text-gray-500 hover:text-white transition cursor-pointer">Skip for now →</button>
+                <button onClick={() => setStep(0)} className="text-sm text-gray-500 hover:text-white transition cursor-pointer">Back</button>
+                <button onClick={() => setStep(2)} className="text-sm text-gray-500 hover:text-white transition cursor-pointer">Skip for now</button>
               </div>
             </div>
           )}
@@ -364,7 +407,7 @@ export default function OnboardingPage() {
             <div className="p-8 space-y-6">
               <div>
                 <div className="flex items-center gap-3 mb-1">
-                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-sm font-bold">2</div>
+                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-sm font-bold text-white">2</div>
                   <h2 className="text-lg font-bold text-white">Connect Slack</h2>
                 </div>
                 <p className="text-gray-400 text-sm ml-11">
@@ -372,10 +415,10 @@ export default function OnboardingPage() {
                 </p>
               </div>
 
-              {/* Show repo connected status */}
+              {/* Repo connected status */}
               {connectedRepo && (
                 <div className="flex items-center gap-2.5 px-4 py-3 bg-green-900/20 border border-green-800/40 rounded-xl text-sm">
-                  <span className="text-green-400">✓</span>
+                  <CheckIcon className="w-4 h-4 text-green-400 flex-shrink-0" />
                   <span className="text-green-300 font-medium">{connectedRepo}</span>
                   <span className="text-gray-500">— {webhookCreated ? 'webhook active' : 'connected'}</span>
                 </div>
@@ -389,9 +432,9 @@ export default function OnboardingPage() {
 
               {slackConfigured ? (
                 <div className="flex items-center gap-3 p-4 bg-green-900/20 border border-green-800/40 rounded-xl">
-                  <span className="text-2xl">✅</span>
+                  <CheckIcon className="w-5 h-5 text-green-400 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-green-300">Slack already connected!</p>
+                    <p className="text-sm font-medium text-green-300">Slack already connected</p>
                     <p className="text-xs text-gray-500 mt-0.5">You're all set.</p>
                   </div>
                 </div>
@@ -432,12 +475,12 @@ export default function OnboardingPage() {
               )}
 
               <div className="flex justify-between pt-2">
-                <button onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-white transition cursor-pointer">← Back</button>
+                <button onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-white transition cursor-pointer">Back</button>
                 <button
                   onClick={() => setStep(3)}
                   className="text-sm text-gray-500 hover:text-white transition cursor-pointer"
                 >
-                  {slackConfigured ? 'Continue →' : 'Skip for now →'}
+                  {slackConfigured ? 'Continue' : 'Skip for now'}
                 </button>
               </div>
             </div>
@@ -446,8 +489,8 @@ export default function OnboardingPage() {
           {/* ── STEP 3: Done ── */}
           {step === 3 && (
             <div className="p-8 text-center space-y-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-3xl mx-auto shadow-lg shadow-blue-500/20">
-                🎉
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-blue-500/20">
+                <CheckIcon className="w-8 h-8 text-white" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">You're all set!</h2>
@@ -461,7 +504,10 @@ export default function OnboardingPage() {
                     ? 'bg-green-900/20 border-green-800/40 text-green-300'
                     : 'bg-[#21262d] border-[#30363d] text-gray-500'
                 }`}>
-                  <span>{repos.length > 0 ? '✓' : '○'}</span>
+                  {repos.length > 0
+                    ? <CheckIcon className="w-4 h-4 flex-shrink-0" />
+                    : <span className="w-4 h-4 rounded-full border border-gray-600 flex-shrink-0" />
+                  }
                   <span>{repos.length > 0 ? `${repos.length} repo connected` : 'No repo connected yet'}</span>
                 </div>
                 <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-sm ${
@@ -469,7 +515,10 @@ export default function OnboardingPage() {
                     ? 'bg-green-900/20 border-green-800/40 text-green-300'
                     : 'bg-[#21262d] border-[#30363d] text-gray-500'
                 }`}>
-                  <span>{slackConfigured ? '✓' : '○'}</span>
+                  {slackConfigured
+                    ? <CheckIcon className="w-4 h-4 flex-shrink-0" />
+                    : <span className="w-4 h-4 rounded-full border border-gray-600 flex-shrink-0" />
+                  }
                   <span>{slackConfigured ? 'Slack connected' : 'Slack not connected'}</span>
                 </div>
               </div>
@@ -478,7 +527,7 @@ export default function OnboardingPage() {
                 onClick={() => navigate('/dashboard', { replace: true })}
                 className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition cursor-pointer"
               >
-                Go to Dashboard →
+                Go to Dashboard
               </button>
 
               {(!repos.length || !slackConfigured) && (
