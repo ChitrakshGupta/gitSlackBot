@@ -1,6 +1,7 @@
 # gitSlackBot
 
-> **Event-Driven GitHub Automation Bot** — Sign in with GitHub, connect a repo, and let the bot auto-label issues, comment on PRs, and send rich Slack notifications. Every event is logged in a live dashboard you can configure without touching code.
+A GitHub automation bot that connects your repos, auto-labels issues, comments on PRs, and sends real-time Slack notifications — all from a dashboard.
+
 
 **Live app → [https://git-slack-bot.vercel.app](https://git-slack-bot.vercel.app)**  
 **API → [https://git-slack-bot-api.onrender.com](https://git-slack-bot-api.onrender.com)**
