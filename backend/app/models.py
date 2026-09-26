@@ -24,6 +24,7 @@ class User(Base):
     username = Column(Text, nullable=False)
     access_token = Column(Text, nullable=False)  # GitHub OAuth token
     slack_webhook_url = Column(Text, nullable=True)
+    automation_settings = Column(JSONB, nullable=True)  # null = use defaults
     created_at = Column(DateTime(timezone=True), default=utcnow)
 
     repos = relationship("Repo", back_populates="user", cascade="all, delete-orphan")
@@ -50,6 +51,7 @@ class Event(Base):
     github_delivery_id = Column(Text, unique=True, nullable=False)  # deduplication
     event_type = Column(Text, nullable=False)  # push, issues, pull_request
     payload = Column(JSONB, nullable=False)
+    ai_analysis = Column(JSONB, nullable=True)  # AI triage result (None when AI disabled/failed)
     action_taken = Column(Text, nullable=True)  # what the bot did
     status = Column(Text, nullable=False, default="processed")  # processed / failed
     created_at = Column(DateTime(timezone=True), default=utcnow)

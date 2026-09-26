@@ -24,6 +24,10 @@ class Settings:
     # Default Slack webhook URL — auto-assigned to new users on signup
     DEFAULT_SLACK_WEBHOOK_URL: str = os.getenv("DEFAULT_SLACK_WEBHOOK_URL", "")
 
+    # AI — Google Gemini (free tier via Google AI Studio, no credit card required)
+    # Get your key at: https://aistudio.google.com/app/apikey
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+
     # Neon Postgres connection string  (async driver)
     DATABASE_URL: str = os.getenv("NEON_DATABASE_URL", "")
 

@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     username        TEXT        NOT NULL,
     access_token    TEXT        NOT NULL,
     slack_webhook_url TEXT      NULL,
+    automation_settings JSONB   NULL,               -- user-configured automation toggles (null = use defaults)
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -34,6 +35,7 @@ CREATE TABLE IF NOT EXISTS events (
     github_delivery_id  TEXT    NOT NULL UNIQUE,   -- deduplication key
     event_type          TEXT    NOT NULL,           -- push, issues, pull_request
     payload             JSONB   NOT NULL,
+    ai_analysis         JSONB   NULL,               -- structured Gemini output (null when AI disabled)
     action_taken        TEXT    NULL,               -- what the bot did
     status              TEXT    NOT NULL DEFAULT 'processed',  -- processed / failed
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
