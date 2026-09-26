@@ -114,9 +114,9 @@ app.include_router(dashboard_router)
 app.include_router(settings_router)
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
-    """Health check — also reports DB and tunnel status."""
+    """Health check — supports GET and HEAD for UptimeRobot monitoring."""
     db_status = "connected" if engine is not None else "not configured"
     return {
         "status": "ok",
