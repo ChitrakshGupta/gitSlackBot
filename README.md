@@ -8,7 +8,7 @@ A GitHub automation bot that connects your repos, auto-labels issues, comments o
 
 ---
 
-## What the App Does
+## What the App Does 
 
 GitSlackBot connects your GitHub repositories to Slack through a fully automated event pipeline:
 
