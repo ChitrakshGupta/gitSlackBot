@@ -76,6 +76,15 @@ async def _send_slack_notification(webhook_url: str, message: dict) -> bool:
             if resp.status_code == 200:
                 return True
             logger.error("Slack responded with %s: %s", resp.status_code, resp.text)
+
+            # Fallback: If Slack rejects Block Kit (e.g. 400 invalid_blocks or size limit),
+            # retry with simple plain text so the notification is delivered reliably.
+            if "blocks" in message and message.get("text"):
+                fallback_resp = await client.post(webhook_url, json={"text": message["text"]})
+                if fallback_resp.status_code == 200:
+                    logger.info("Slack plaintext fallback succeeded")
+                    return True
+
             return False
     except Exception as e:
         logger.error("Slack notification failed: %s", e)
@@ -112,6 +121,7 @@ def _ai_issue_blocks(analysis: IssueAnalysis) -> list[dict]:
     """Return Block Kit section blocks for AI issue analysis."""
     p_emoji = priority_emoji(analysis.priority)
     confidence_pct = round(analysis.confidence * 100)
+    summary = analysis.summary[:2500] if analysis.summary else ""
     return [
         {"type": "divider"},
         {
@@ -130,7 +140,7 @@ def _ai_issue_blocks(analysis: IssueAnalysis) -> list[dict]:
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Summary:* {analysis.summary}",
+                "text": f"*Summary:* {summary}",
             },
         },
     ]
@@ -139,6 +149,7 @@ def _ai_issue_blocks(analysis: IssueAnalysis) -> list[dict]:
 def _ai_pr_blocks(analysis: PRAnalysis) -> list[dict]:
     """Return Block Kit section blocks for AI PR analysis."""
     c_emoji = complexity_emoji(analysis.complexity)
+    summary = analysis.summary[:2500] if analysis.summary else ""
     risk_text = (
         "  •  ".join(analysis.risk_flags)
         if analysis.risk_flags
@@ -160,7 +171,7 @@ def _ai_pr_blocks(analysis: PRAnalysis) -> list[dict]:
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Summary:* {analysis.summary}",
+                "text": f"*Summary:* {summary}",
             },
         },
         {
@@ -175,13 +186,14 @@ def _ai_pr_blocks(analysis: PRAnalysis) -> list[dict]:
 
 def _ai_push_blocks(analysis: PushAnalysis) -> list[dict]:
     """Return Block Kit section blocks for AI push changelog."""
+    changelog = analysis.changelog[:2500] if analysis.changelog else ""
     return [
         {"type": "divider"},
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*🤖 AI Changelog:* {analysis.changelog}",
+                "text": f"*🤖 AI Changelog:* {changelog}",
             },
         },
     ]
