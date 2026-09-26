@@ -1,6 +1,7 @@
 # gitSlackBot
 
-A GitHub automation bot that connects your repos, auto-labels issues, comments on PRs, and sends real-time Slack notifications — all from a single dashboard.
+A GitHub automation bot that connects your repos, auto-labels issues, comments on PRs, and sends real-time Slack notifications — all from a dashboard.
+
 
 ## Features
 
