@@ -4,7 +4,7 @@ A GitHub automation bot that connects your repos, auto-labels issues, comments o
 
 
 **Live app → [https://git-slack-bot.vercel.app](https://git-slack-bot.vercel.app)**  
-**API → [https://git-slack-bot-api.onrender.com](https://git-slack-bot-api.onrender.com)**
+**API → [https://gitslackbot.onrender.com](https://gitslackbot.onrender.com)**
 
 ---
 
