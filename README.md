@@ -13,13 +13,14 @@ A GitHub automation bot that connects your repos, auto-labels issues, comments o
 GitSlackBot connects your GitHub repositories to Slack through a fully automated event pipeline:
 
 1. **Sign in with GitHub** — OAuth grants the bot permission to read repos and write labels/comments on your behalf.
-2. **Connect a repository** — Pick any repo you own from the searchable onboarding screen; the app installs a webhook automatically via the GitHub API.
-3. **Receive webhook events** — GitHub delivers `issues`, `pull_request`, and `push` events to your endpoint.
-4. **Act on GitHub** — For new issues the bot adds a `bot-triaged` label; for new PRs it posts a welcome comment.
-5. **Notify Slack** — Rich Block Kit messages go to your Slack channel in real time.
-6. **AI triage (stretch goal)** — Each event is run through Gemini 2.0 Flash: issues get a priority score + suggested label, PRs get a complexity rating + code-quality tip, pushes get a one-line changelog summary. Results appear in both the Slack notification and the dashboard.
-7. **Dashboard** — Protected behind login; shows every processed event, the action the bot took, and the AI analysis.
-8. **Configurable automation** — Toggle each automation on/off from the Settings panel without redeploying.
+   
+3. **Connect a repository** — Pick any repo you own from the searchable onboarding screen; the app installs a webhook automatically via the GitHub API.
+4. **Receive webhook events** — GitHub delivers `issues`, `pull_request`, and `push` events to your endpoint.
+5. **Act on GitHub** — For new issues the bot adds a `bot-triaged` label; for new PRs it posts a welcome comment.
+6. **Notify Slack** — Rich Block Kit messages go to your Slack channel in real time.
+7. **AI triage (stretch goal)** — Each event is run through Gemini 2.0 Flash: issues get a priority score + suggested label, PRs get a complexity rating + code-quality tip, pushes get a one-line changelog summary. Results appear in both the Slack notification and the dashboard.
+8. **Dashboard** — Protected behind login; shows every processed event, the action the bot took, and the AI analysis.
+9. **Configurable automation** — Toggle each automation on/off from the Settings panel without redeploying.
 
 ### Event types handled
 
